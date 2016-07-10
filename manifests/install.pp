@@ -1,5 +1,5 @@
 class tgit::install {
-  package { 'git':
-    ensure => present,
-  }
+  # this now includes ::git, the puppetlabs module, directly to avoid
+  # duplicate package declaration
+  include ::git
 }
