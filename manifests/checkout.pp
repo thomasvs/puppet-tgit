@@ -4,7 +4,8 @@
 # known_hosts and ssh identities should be set up properly.
 #
 # To express a dependency on checkoutdir, use:
-#   require => Exec["git-clone-${directory}"]
+#   require => Exec["git-clone-${directory}/${checkoutdir}"]
+# This define will require the passed $directory.
 
 #
 # == Parameters:
@@ -66,12 +67,15 @@ define tgit::checkout (
   }
 
   # only run if the .git directory does not exist
-  exec { "git-clone-${directory}":
+  exec { "git-clone-${directory}/${checkoutdir}":
     cwd         => $directory,
     user        => $user,
     path        => [ '/bin', '/usr/bin', ],
     command     => "git clone --recursive ${repository} ${checkoutdir} && cd ${checkoutdir} && git checkout ${commit}",
-    creates     => "${directory}/${checkoutdir}/.git",
+    creates     => [
+      "${directory}/${checkoutdir}",
+      "${directory}/${checkoutdir}/.git",
+    ],
     refreshonly => false,
     logoutput   => on_failure,
     require     => $myrequire,
@@ -80,13 +84,13 @@ define tgit::checkout (
   # FIXME: only run if the commit is given and different from current checkout
   # FIXME: but if we check out a branch, always fetch and update
   # FIXME: if it's a branch, we need to do git pull too
-  exec { "git-checkout-${directory}":
+  exec { "git-checkout-${directory}/${checkoutdir}":
     cwd         => "${directory}/${checkoutdir}",
     user        => $user,
     path        => [ '/bin', '/usr/bin', ],
     refreshonly => false,
     logoutput   => on_failure,
-    require     => Exec["git-clone-${directory}"],
+    require     => Exec["git-clone-${directory}/${checkoutdir}"],
     # Note:
     # $commit can be
     # - a local branch (which will not be updated)
